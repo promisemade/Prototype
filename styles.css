@@ -1737,23 +1737,52 @@ body.expert .chips{ display:inline-flex; }
     grid-template-columns: 1fr;
   }
   .app-header__row{
-    align-items:flex-start;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .9rem;
+  }
+  .app-header .fr-header__brand{
+    width: 100%;
   }
   .app-brand{
     width:100%;
     align-items:flex-start;
     gap: .8rem;
+    flex-wrap: nowrap;
   }
   .app-brand__logo-image{
-    width: min(11rem, 44vw);
+    width: min(10.5rem, 38vw);
+    max-width: 10.5rem;
+  }
+  .fr-header__service{
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .app-service-title,
+  .fr-header__service-tagline{
+    max-width: none;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: normal;
+    hyphens: none;
+    text-wrap: balance;
+  }
+  .app-service-title{
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+  .fr-header__service-tagline{
+    font-size: .72rem;
   }
   .app-header__actions{
     width:100%;
     flex-wrap:wrap;
     white-space:normal;
+    gap: .5rem;
   }
   .app-header__actions .fr-btn{
-    flex:1 1 12rem;
+    flex:1 1 calc(50% - .5rem);
+    min-width: 0;
     justify-content:center;
   }
   .app-panel,

@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="assets/vendor/remixicon/remixicon.css" />
 
   <!-- App overrides (léger) -->
-  <link rel="stylesheet" href="styles.css?v=20260301-relais-core3" />
+  <link rel="stylesheet" href="styles.css?v=20260301-relais-mobile1" />
 </head>
 <body>
 
@@ -669,7 +669,7 @@
         <div class="fr-footer__bottom">
           <ul class="fr-footer__bottom-list">
             <li class="fr-footer__bottom-item"><a class="fr-footer__bottom-link" href="#main">Retour au simulateur</a></li>
-            <li class="fr-footer__bottom-item"><a class="fr-footer__bottom-link" href="#" onclick="window.print(); return false;">Imprimer</a></li>
+            <li class="fr-footer__bottom-item"><a class="fr-footer__bottom-link" href="#" onclick="if(window.handleFooterPrint){ window.handleFooterPrint(); } else { window.print(); } return false;">Imprimer</a></li>
           </ul>
           <div class="fr-footer__bottom-copy">
             <p class="fr-text--xs fr-mb-0">Ce site n’utilise pas de cookies.</p>
@@ -679,12 +679,12 @@
     </div>
   </footer>
 
-  <script src="data_bundle.js?v=20260301-relais-core3"></script>
+  <script src="data_bundle.js?v=20260301-relais-mobile1"></script>
   <script src="assets/vendor/qrcode/qrcode.js"></script>
   <script src="assets/vendor/qrcode/qrcode-wrapper.js"></script>
-  <script src="simulator-core.js?v=20260301-relais-core3"></script>
-  <script src="simulator-ui.js?v=20260301-relais-core3"></script>
-  <script src="app.js?v=20260301-relais-core3"></script>
+  <script src="simulator-core.js?v=20260301-relais-mobile1"></script>
+  <script src="simulator-ui.js?v=20260301-relais-mobile1"></script>
+  <script src="app.js?v=20260301-relais-mobile1"></script>
 
   <!-- DSFR JS volontairement non chargé : l'outil utilise des composants maison (évite les erreurs en file://). -->
 </body>

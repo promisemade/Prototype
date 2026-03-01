@@ -1729,18 +1729,18 @@ function openPrintView(){
   const top = packs.slice(0,3);
   const best = top[0] || null;
 
-  const subtitle = `Mise Ã  jour : ${META.exported_on} (donnÃ©es ${META.data_version})`;
-  const profile = `Profil : ${statutLabel(st.statut)} â€¢ Ã‚ge : ${st.age || "â€”"} â€¢ Formation : ${formationLabel(st.formation)}`;
-  const financial = `CoÃ»t pÃ©dagogique : ${formatEUR(st.cost_peda||0)} â€¢ CPF : ${formatEUR(st.cpf_amount||0)} â€¢ PRF : ${prfLabel(prf.status)}`;
+  const subtitle = `Mise \u00e0 jour : ${META.exported_on} (donn\u00e9es ${META.data_version})`;
+  const profile = `Profil : ${statutLabel(st.statut)} • \u00c2ge : ${st.age || "—"} • Formation : ${formationLabel(st.formation)}`;
+  const financial = `Co\u00fbt p\u00e9dagogique : ${formatEUR(st.cost_peda||0)} • CPF : ${formatEUR(st.cpf_amount||0)} • PRF : ${prfLabel(prf.status)}`;
 
   const topHtml = top.map((pack)=>{
     const reste = resteTriplet(pack.id, st);
-    return `<li><strong>${escapeHtml(pack.title)}</strong> - reste Ã  charge minimum : <strong>${escapeHtml(reste.min)}</strong></li>`;
+    return `<li><strong>${escapeHtml(pack.title)}</strong> - reste \u00e0 charge minimum : <strong>${escapeHtml(reste.min)}</strong></li>`;
   }).join("");
 
   const planHtml = renderPlanAction(st, top, prf);
   const missing = best ? missingToImprove(best.id, st, prf) : [];
-  const missingHtml = missing.length ? missing.map((item)=>`<li>${escapeHtml(item)}</li>`).join("") : "<li>â€”</li>";
+  const missingHtml = missing.length ? missing.map((item)=>`<li>${escapeHtml(item)}</li>`).join("") : "<li>—</li>";
 
   const sources = [];
   if(best){
@@ -1753,13 +1753,13 @@ function openPrintView(){
   }
   const sourcesHtml = sources.length
     ? sources.map((entry)=>`<li><a href="${entry.url}">${escapeHtml(entry.name)}</a><span class="url"> - ${escapeHtml(entry.url)}</span></li>`).join("")
-    : "<li>â€”</li>";
+    : "<li>—</li>";
 
   const bestBlock = best ? (()=> {
     const reste = resteTriplet(best.id, st);
     return `
       <div class="card">
-        <div class="k">ScÃ©nario recommandÃ©</div>
+        <div class="k">Sc\u00e9nario recommand\u00e9</div>
         <div class="h">${escapeHtml(best.title)}</div>
         <div class="grid">
           <div class="mini"><div class="k2">Minimum</div><div class="v2">${escapeHtml(reste.min)}</div></div>
@@ -1803,8 +1803,8 @@ function openPrintView(){
   `;
 
   const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${escapeHtml("RELAIS - PDF")}</title><style>${css}</style></head><body>
-    <h1>RELAIS - Synthese usager</h1>
-    <p class="sub">${escapeHtml("Repertoire des Eligibilites, Leviers, Aides et Informations sur les Solutions de financement")}</p>
+    <h1>RELAIS - Synth\u00e8se usager</h1>
+    <p class="sub">${escapeHtml("R\u00e9pertoire des \u00c9ligibilit\u00e9s, Leviers, Aides et Informations sur les Solutions de financement")}</p>
     <p class="sub">${escapeHtml(subtitle)}</p>
     <p class="meta">${escapeHtml(profile)}</p>
     <p class="meta">${escapeHtml(financial)}</p>
@@ -1814,8 +1814,8 @@ function openPrintView(){
 
     <div class="cols">
       <div>
-        <h2>Top 3 scenarios</h2>
-        <ul>${topHtml || "<li>â€”</li>"}</ul>
+        <h2>Top 3 sc\u00e9narios</h2>
+        <ul>${topHtml || "<li>—</li>"}</ul>
 
         <h2>Plan d'action</h2>
         <div class="plan">${planHtml || ""}</div>
@@ -1824,10 +1824,10 @@ function openPrintView(){
         <h2>Ce qu'il manque (prioritaire)</h2>
         <ul>${missingHtml}</ul>
 
-        <h2>Sources (Ã  vÃ©rifier)</h2>
+        <h2>Sources (\u00e0 v\u00e9rifier)</h2>
         <ul>${sourcesHtml}</ul>
 
-        <p class="small">NB : document d'orientation (non opposable). Les dÃ©cisions relÃ¨vent des organismes instructeurs.</p>
+        <p class="small">NB : document d'orientation (non opposable). Les d\u00e9cisions rel\u00e8vent des organismes instructeurs.</p>
       </div>
     </div>
   </body></html>`;
@@ -1852,6 +1852,18 @@ function openPrintView(){
     setTimeout(()=>{ try{ iframe.remove(); }catch(e){} }, 800);
   }, 350);
 }
+
+function handleFooterPrint(){
+  const onResults = $("screenResults") && !$("screenResults").classList.contains("hidden");
+  if(onResults){
+    openPrintView();
+    return;
+  }
+  window.print();
+}
+
+window.openPrintView = openPrintView;
+window.handleFooterPrint = handleFooterPrint;
 
 $("btnStart").addEventListener("click", ()=>{
   resetInactivityTimer();
