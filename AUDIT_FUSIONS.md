@@ -53,6 +53,16 @@ Cas particulier :
 
 - `Service public regional de la formation (exemple) + aides individuelles regionales`
   Motif : fiche inter-regions, source Nouvelle-Aquitaine, pas exploitable telle quelle pour un usager HDF.
+- `FNE-Formation`
+  Motif : dispositif employeur / OPCO trop variable, peu actionnable directement pour l'usager et source de bruit dans RELAIS.
+- `VIVEA`
+  Motif : dispositif agricole trop hors perimetre pour un outil centre sur les formations sport / animation.
+- `FAFCEA`
+  Motif : fonds artisan trop peripherique pour le coeur sport / animation, sauf cas limites non prioritaires pour RELAIS.
+- `Conge de formation de cadres et d'animateurs pour la jeunesse`
+  Motif : conge specifique et droit d'absence, pas un levier de financement directement mobilisable dans RELAIS.
+- `CPF - Permis de conduire`
+  Motif : usage CPF trop peripherique par rapport au coeur sport / animation, avec besoin d'un cadrage mobilite specifique si on voulait le traiter proprement.
 
 ### A rabattre vers une fiche HDF plus precise
 
@@ -66,12 +76,8 @@ Cas particulier :
   Motif : ce n'est pas HDF, mais c'est un vrai levier France Travail, distinct du PRF regional.
 - `Aide individuelle a la formation (AIF)`
   Motif : levier national concret, mobilisable selon instruction.
-- `FNE-Formation`
-  Motif : pas generique inter-regions, mais dispositif a surveiller et non prioritaire ; a garder avec prudence.
 - `Aide BAFA de la Caf (aide nationale) + complements locaux`
   Motif : aide nationale reelle avec complements locaux variables.
-- `VIVEA`
-  Motif : peu pertinent pour votre terrain, mais regime reel et distinct pour les chefs d'exploitation agricole.
 - `OPCO - branche du sport (AFDAS)` / `OPCO - branche Eclat (Uniformation)`
   Motif : pas des aides directes mais des acteurs utiles pour comprendre qui finance ou instruit selon la branche.
 

@@ -398,7 +398,7 @@ function createWizardController({ $, getState, onComplete, notify }){
           "V\u00e9rifier les bar\u00e8mes, les pi\u00e8ces demand\u00e9es et les formations recevables.",
           "D\u00e9poser avant l'entr\u00e9e en formation si le fonds l'exige."
         ],
-        ["FAF comp\u00e9tent (FIFPL/AGEFICE/FAFCEA...)", "Organisme de formation"]
+        ["FAF comp\u00e9tent (FIF PL / AGEFICE...)", "Organisme de formation"]
       );
     }
 
@@ -783,6 +783,13 @@ function getWizardSteps({ choiceBtn, state, $ }){
     }[String(value || "")] || "à préciser");
   }
 
+  function displayPackTitle(pack){
+    if(pack && pack.id === "faf"){
+      return "Non-salariés - CPF + FAF (FIF PL / AGEFICE...)";
+    }
+    return pack ? pack.title : "";
+  }
+
   function buildSummaryData({ best, alternatives, st, prf, resteTriplet, statutLabel, formationLabel, formatEUR, prfLabel, whoReceivesHTML }){
     if(!best) return null;
 
@@ -802,7 +809,7 @@ function getWizardSteps({ choiceBtn, state, $ }){
           const reason = (pack.eligibility && pack.eligibility.reasons && pack.eligibility.reasons[0])
             ? pack.eligibility.reasons[0]
             : ((pack.why && pack.why[0]) || "Piste secondaire au vu des informations saisies.");
-          return `<li><strong>${escapeHtml(pack.title)}</strong> : ${escapeHtml(reason)}</li>`;
+          return `<li><strong>${escapeHtml(displayPackTitle(pack))}</strong> : ${escapeHtml(reason)}</li>`;
         }).join("")}</ul>`
       : "";
     const confidence = getConfidenceData(best);
@@ -848,7 +855,7 @@ function getWizardSteps({ choiceBtn, state, $ }){
 
     return {
       actionsHtml: steps.slice(0, 3).map((item)=>`<li>${escapeHtml(item)}</li>`).join(""),
-      bestTitle: best.title,
+      bestTitle: displayPackTitle(best),
       minText: rr.min,
       rangeText: `Fourchette : ${rr.probable} \u2022 Optimiste : ${rr.opt}`,
       subtitle: subtitleParts.join(" \u2022 "),
@@ -944,7 +951,7 @@ function getWizardSteps({ choiceBtn, state, $ }){
       return `
         <article class="${bestClass}">
           <div class="pack__head">
-            <div class="pack__title">${renderPackIcon(pack.id)}<span>${escapeHtml(pack.title)}</span></div>
+            <div class="pack__title">${renderPackIcon(pack.id)}<span>${escapeHtml(displayPackTitle(pack))}</span></div>
             ${badge}
           </div>
 

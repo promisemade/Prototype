@@ -13,7 +13,7 @@ function test(name, fn){
 function repairDisplayText(value){
   let text = String(value || "");
   for(let i = 0; i < 2; i += 1){
-    if(!/[ÃÂâ€™â€œâ€]/.test(text)) break;
+    if(!/[ÃƒÃ‚Ã¢â‚¬â„¢Ã¢â‚¬Å“Ã¢â‚¬]/.test(text)) break;
     const repaired = Buffer.from(text, "latin1").toString("utf8");
     if(!repaired || repaired === text) break;
     text = repaired;
@@ -25,8 +25,8 @@ function normalizeName(value){
   return repairDisplayText(value)
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/œ/g, "oe")
-    .replace(/[’']/g, " ")
+    .replace(/Å“/g, "oe")
+    .replace(/[â€™']/g, " ")
     .replace(/[^a-z0-9]+/gi, " ")
     .toLowerCase()
     .trim()
@@ -62,17 +62,13 @@ const WORKBOOK_CATALOGUE_NAMES = [
   "CPF des travailleurs ind\u00e9pendants",
   "FIF PL \u2013 financement formation professions lib\u00e9rales",
   "AGEFICE \u2013 financement formation dirigeants non-salari\u00e9s",
-  "FAFCEA \u2013 financement formation artisans",
-  "VIVEA \u2013 financement formation chefs d\u2019exploitation agricole",
   "OPCO \u2013 branche du sport (CCN Sport IDCC 2511)",
   "OPCO \u2013 branche \u00c9clat (IDCC 1518)",
   "Service public r\u00e9gional de la formation (exemple) + aides individuelles r\u00e9gionales",
-  "FNE-Formation",
   "Abondement France Travail sur un dossier CPF (financement compl\u00e9mentaire)",
   "Aide \u00e0 la mobilit\u00e9 (d\u00e9placement, repas, h\u00e9bergement) pendant une formation",
   "Contrat d\u2019engagement jeune (accompagnement intensif + allocation)",
   "Contrat de s\u00e9curisation professionnelle (accompagnement + formation)",
-  "Cong\u00e9 de formation de cadres et d\u2019animateurs pour la jeunesse (dispositif jeunesse)",
   "PRF 2025 \u2013 SFER (Se Former pour un Emploi en R\u00e9gion) \u2013 D\u00e9couverte/Qualifiant/Perfectionnement",
   "Ch\u00e8que Pass Formation / Pass Formation (abondement CPF)",
   "Ch\u00e8que Pass Formation Sup (abondement CPF \u2013 formations cibl\u00e9es)",
@@ -82,7 +78,6 @@ const WORKBOOK_CATALOGUE_NAMES = [
   "PRF 2025 \u2013 Ch\u00e8que Pass VAE (abondement CPF) \u2013 supprim\u00e9 au 01/01/2026",
   "Proch\u2019Info-Formation (point d\u2019entr\u00e9e orientation)",
   "Proch\u2019Emploi (service sur-mesure emploi/recrutement)",
-  "CPF \u2013 Permis de conduire (groupe l\u00e9ger)"
 ];
 
 const WORKBOOK_REGION_NAMES = [
@@ -108,12 +103,24 @@ const MANUAL_EXTRA_REGION = [
   "Avance Loca-Pass (Action Logement)"
 ];
 
+const EXCLUDED_FROM_RELAIS = [
+  "FNE-Formation",
+  "VIVEA \u2013 financement formation chefs d\u2019exploitation agricole",
+  "FAFCEA \u2013 financement formation artisans",
+  "Cong\u00e9 de formation de cadres et d\u2019animateurs pour la jeunesse (dispositif jeunesse)",
+  "CPF \u2013 Permis de conduire (groupe l\u00e9ger)",
+];
+
 global.window = global;
 require("../data_bundle.js");
 const data = global.DISPOSITIFS_DATA;
 
 test("bundle remains exhaustive against the two workbook sheets and documents manual additions", ()=>{
-  const catalogueNames = (data.catalogue || []).map((entry)=> entry["Dispositif"]).filter(Boolean);
+  const excludedSet = new Set(EXCLUDED_FROM_RELAIS.map(normalizeName));
+  const catalogueNames = (data.catalogue || [])
+    .map((entry)=> entry["Dispositif"])
+    .filter(Boolean)
+    .filter((name)=> !excludedSet.has(normalizeName(name)));
   const regionNames = (data.region_hdf || []).map((entry)=> entry["Dispositif (Hauts-de-France)"] || entry["Dispositif"]).filter(Boolean);
 
   const workbookCatalogueSet = new Set(WORKBOOK_CATALOGUE_NAMES.map(normalizeName));
@@ -131,7 +138,7 @@ test("bundle remains exhaustive against the two workbook sheets and documents ma
     .map(normalizeName)
     .sort();
 
-  assert.equal(catalogueNames.length, 51);
+  assert.equal(catalogueNames.length, 46);
   assert.equal(regionNames.length, 12);
   assert.deepEqual(missingCatalogue, []);
   assert.deepEqual(missingRegion, []);

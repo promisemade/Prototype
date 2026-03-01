@@ -38,6 +38,12 @@
     return String(value || "").toLowerCase();
   }
 
+  GENERIC_UNUSED_DISPOSITIFS.add("FNE-Formation");
+  GENERIC_UNUSED_DISPOSITIFS.add("VIVEA – financement formation chefs d’exploitation agricole");
+  GENERIC_UNUSED_DISPOSITIFS.add("FAFCEA – financement formation artisans");
+  GENERIC_UNUSED_DISPOSITIFS.add("Congé de formation de cadres et d’animateurs pour la jeunesse (dispositif jeunesse)");
+  GENERIC_UNUSED_DISPOSITIFS.add("CPF – Permis de conduire (groupe léger)");
+
   function hasAny(text, keywords){
     const haystack = normalize(text);
     return (keywords || []).some((keyword) => haystack.includes(keyword));
@@ -975,7 +981,7 @@ note = (status === "ineligible")
         return st.statut === "de" || st.statut === "jeune";
       }
 
-      if(name.includes("fif pl") || name.includes("agefice") || name.includes("fafcea") || name.includes("vivea") || name.includes("cpf des travailleurs independants")){
+      if(name.includes("fif pl") || name.includes("agefice") || name.includes("vivea") || name.includes("cpf des travailleurs independants")){
         return st.statut === "ind";
       }
 

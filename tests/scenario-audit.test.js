@@ -75,7 +75,9 @@ test("terrain cases keep complementary aids aligned with the actual profile", ()
   });
   const indepOthers = core.filterOtherDispositifs(independant).map(getTitle);
   assert.equal(core.buildPacks(independant).packs[0].id, "faf");
-  assert.ok(indepOthers.some((name)=> /AGEFICE|FIF PL|FAFCEA|VIVEA/i.test(name)));
+  assert.ok(indepOthers.some((name)=> /AGEFICE|FIF PL/i.test(name)));
+  assert.ok(!indepOthers.some((name)=> /FAFCEA/i.test(name)));
+  assert.ok(!indepOthers.some((name)=> /VIVEA/i.test(name)));
   assert.ok(!indepOthers.some((name)=> /retour .* emploi|engagement jeune|apprentissage/i.test(name)));
 
   const alternanceHandicap = makeState({

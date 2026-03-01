@@ -444,7 +444,7 @@ function sourcePills(names, limit=2, options={}){
 }
 
 function renderSourceList(names){
-  return selectBestSourceNames(names).map((name)=>{
+  return selectBestSourceNames(names).filter((name)=> !/FAFCEA/i.test(repairDisplayText(name || ""))).map((name)=>{
     const label = repairDisplayText(name || "").trim();
     if(!label) return "";
     const item = resolveDispositif(name);
@@ -453,6 +453,13 @@ function renderSourceList(names){
     const link = url ? `<a href="${url}" target="_blank" rel="noopener">${escapeHtml(label)}</a>` : escapeHtml(label);
     return `<div class="pack__source-item"><span class="pack__source-bullet" aria-hidden="true">•</span><span class="pack__source-linkwrap">${link}</span></div>`;
   }).filter(Boolean).join("");
+}
+
+function displayPackTitle(pack){
+  if(pack && pack.id === "faf"){
+    return "Non-salariés - CPF + FAF (FIF PL / AGEFICE...)";
+  }
+  return pack ? pack.title : "";
 }
 
 function buildCostVigilanceItems(top, st){
@@ -809,7 +816,7 @@ function summaryText(st){
   lines.push("Top sc\u00e9narios :");
   top.forEach((pack, index)=>{
     const rr = resteTriplet(pack.id, st);
-    lines.push(`${index+1}. ${pack.title} - reste \u00e0 charge min. : ${rr.min}`);
+    lines.push(`${index+1}. ${displayPackTitle(pack)} - reste \u00e0 charge min. : ${rr.min}`);
   });
   lines.push("NB : orientation non opposable. V\u00e9rifier via les sources.");
   return lines.join("\n");
@@ -1075,6 +1082,11 @@ function shouldHideCartographyEntry(title){
   const raw = normalizeCompact(title);
   if(raw === "programme regional de formation") return true;
   if(raw.includes("service public regional de la formation exemple")) return true;
+  if(raw === "fne formation") return true;
+  if(raw.includes("vivea")) return true;
+  if(raw.includes("fafcea")) return true;
+  if(raw.includes("conge de formation de cadres et d animateurs pour la jeunesse")) return true;
+  if(raw.includes("cpf permis de conduire")) return true;
   return false;
 }
 
@@ -1504,7 +1516,7 @@ function missingDetails(text){
       "VÃ©rifier barÃ¨mes et piÃ¨ces avant lâ€™entrÃ©e en formation.",
       "DÃ©poser la demande dans les dÃ©lais."
     ];
-    who = ["FAF compÃ©tent (FIFPL/AGEFICE/FAFCEAâ€¦)", "Organisme de formation"];
+    who = ["FAF compÃ©tent (FIF PL / AGEFICE...)", "Organisme de formation"];
   }
 
   return {tagline, how, who};
@@ -1735,7 +1747,7 @@ function openPrintView(){
 
   const topHtml = top.map((pack)=>{
     const reste = resteTriplet(pack.id, st);
-    return `<li><strong>${escapeHtml(pack.title)}</strong> - reste \u00e0 charge minimum : <strong>${escapeHtml(reste.min)}</strong></li>`;
+    return `<li><strong>${escapeHtml(displayPackTitle(pack))}</strong> - reste \u00e0 charge minimum : <strong>${escapeHtml(reste.min)}</strong></li>`;
   }).join("");
 
   const planHtml = renderPlanAction(st, top, prf);
@@ -1744,7 +1756,7 @@ function openPrintView(){
 
   const sources = [];
   if(best){
-    for(const name of (best.dispositifNames || [])){
+    for(const name of (best.dispositifNames || []).filter((label)=> !/FAFCEA/i.test(repairDisplayText(label || "")))){
       const item = dispo(name);
       if(!item) continue;
       const urls = item["Sources (URL)"] || [];
@@ -1760,7 +1772,7 @@ function openPrintView(){
     return `
       <div class="card">
         <div class="k">Sc\u00e9nario recommand\u00e9</div>
-        <div class="h">${escapeHtml(best.title)}</div>
+        <div class="h">${escapeHtml(displayPackTitle(best))}</div>
         <div class="grid">
           <div class="mini"><div class="k2">Minimum</div><div class="v2">${escapeHtml(reste.min)}</div></div>
           <div class="mini"><div class="k2">Fourchette</div><div class="v2">${escapeHtml(reste.probable)}</div></div>
