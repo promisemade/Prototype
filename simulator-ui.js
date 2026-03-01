@@ -827,16 +827,23 @@ function getWizardSteps({ choiceBtn, state, $ }){
       steps.push("Confirmer l'\u00e9ligibilit\u00e9 de l'offre sur Mon Compte Formation");
       if(st.statut === "de" || st.statut === "jeune"){
       steps.push("Monter ensuite le compl\u00e9ment dans le bon ordre : France Travail, AIF ou R\u00e9gion selon la session");
-      } else if(st.statut === "sal" || st.statut === "fp"){
+      } else if(st.statut === "sal"){
         steps.push("Voir ensuite l'abondement employeur / OPCO ou l'articulation avec un PTP");
+      } else if(st.statut === "fp"){
+        steps.push("Voir ensuite avec l'administration le compl\u00e9ment \u00e9ventuel ou l'articulation avec un cong\u00e9 de transition / CFP");
       } else if(st.statut === "ind"){
         steps.push("V\u00e9rifier ensuite le compl\u00e9ment FAF selon votre activit\u00e9");
       } else {
         steps.push("Identifier ensuite le bon financeur compl\u00e9mentaire selon votre situation");
       }
     } else if(best.id === "ptp"){
-      steps.push("Prendre rendez-vous avec un CEP pour cadrer le projet et le calendrier");
-      steps.push("Constituer puis d\u00e9poser le dossier Transitions Pro dans les d\u00e9lais");
+      if(st.statut === "fp"){
+        steps.push("Cadrer le projet avec le service RH / formation de l'administration");
+        steps.push("Confirmer s'il faut mobiliser un cong\u00e9 de transition professionnelle ou un CFP");
+      } else {
+        steps.push("Prendre rendez-vous avec un CEP pour cadrer le projet et le calendrier");
+        steps.push("Constituer puis d\u00e9poser le dossier Transitions Pro dans les d\u00e9lais");
+      }
     } else if(best.id === "faf"){
       steps.push("Identifier le FAF comp\u00e9tent selon l'activit\u00e9 exerc\u00e9e");
       steps.push("V\u00e9rifier les bar\u00e8mes annuels et d\u00e9poser avant l'entr\u00e9e en formation");

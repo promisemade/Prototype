@@ -1,4 +1,4 @@
-(function(root, factory){
+﻿(function(root, factory){
   const api = factory();
   if(typeof module === "object" && module.exports){
     module.exports = api;
@@ -135,6 +135,47 @@
       : "unknown";
   }
 
+  function hasFranceTravailMobilityContext(state, prf){
+    const st = {...defaultState(), ...state};
+    const hasMobilityNeed = !!(st.needs.transport || st.needs.hebergement);
+    const targetContract = targetContractBand(st.target_contract);
+    const cost = Number(st.cost_peda || 0);
+    const cpf = Number(st.cpf_amount || 0);
+
+    if(!hasMobilityNeed) return false;
+    if(!(st.statut === "de" || st.statut === "jeune")) return false;
+
+    const aifLikePath = cost > 0 && cost > cpf && prf.status !== "confirmed";
+    const preHireFranceTravailPath = st.employeur === "oui" && (targetContract === "12plus" || targetContract === "6to11");
+
+    return aifLikePath || preHireFranceTravailPath;
+  }
+
+  function isBranchSpecificOpcoDispositif(dispositif){
+    const rawTitle = String(dispositif["Dispositif (Hauts-de-France)"] || dispositif["Dispositif"] || "");
+    const title = normalize(rawTitle)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[’'`]/g, " ")
+      .replace(/[–—-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const sigle = normalize(dispositif["Sigle"] || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[’'`]/g, " ")
+      .replace(/[–—-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const haystack = `${title} ${sigle}`;
+    return haystack.includes("opco") && (
+      haystack.includes("branche du sport") ||
+      haystack.includes("branche eclat") ||
+      haystack.includes("afdas") ||
+      haystack.includes("uniformation")
+    );
+  }
+
   function worsenStatus(current, next){
     const rank = { eligible: 0, conditional: 1, ineligible: 2 };
     return rank[next] > rank[current] ? next : current;
@@ -266,7 +307,8 @@
         }
       }else if(st.statut === "fp"){
         status = "conditional";
-        reasons.push("En fonction publique, des r\u00e8gles sp\u00e9cifiques s'appliquent et doivent \u00eatre confirm\u00e9es.");
+        reasons.push("Dans la fonction publique, le PTP du priv\u00e9 ne s'applique pas tel quel.");
+        reasons.push("Il faut plut\u00f4t confirmer l'acc\u00e8s \u00e0 un cong\u00e9 de transition professionnelle ou \u00e0 un cong\u00e9 de formation professionnelle selon la situation.");
       }else{
         status = "ineligible";
         reasons.push("Le PTP cible d'abord les salari\u00e9s en poste.");
@@ -275,8 +317,12 @@
 note = (status === "ineligible")
         ? "Non prioritaire selon le statut ou l'anciennet\u00e9 saisis."
         : (status === "eligible"
-          ? "\u00c9ligibilit\u00e9 PTP plausible sous r\u00e9serve du dossier."
-          : "\u00c0 confirmer : anciennet\u00e9, calendrier et recevabilit\u00e9 du dossier.");
+          ? (st.statut === "fp"
+            ? "\u00c9ligibilit\u00e9 publique plausible sous r\u00e9serve de l'accord de l'administration."
+            : "\u00c9ligibilit\u00e9 PTP plausible sous r\u00e9serve du dossier.")
+          : (st.statut === "fp"
+            ? "\u00c0 confirmer : dispositif public applicable, anciennet\u00e9 et accord de l'administration."
+            : "\u00c0 confirmer : anciennet\u00e9, calendrier et recevabilit\u00e9 du dossier."));
     }else if(id === "prf"){
       if(st.statut !== "de" && st.statut !== "jeune"){
         status = "ineligible";
@@ -337,11 +383,17 @@ note = (status === "ineligible")
           status = worsenStatus(status, "conditional");
           note = note || "À confirmer : CPF faible ou nul, abondement ou autre financeur à rechercher.";
         }
-      }else if(st.statut === "sal" || st.statut === "fp"){
+      }else if(st.statut === "sal"){
         if(restCpf > 0){
           reasons.push("Le CPF peut être complété par l'employeur, l'OPCO ou, selon le projet, par un PTP.");
         }else if(Number(st.cpf_amount || 0) > 0){
           reasons.push("Le CPF peut suffire si l'offre est éligible et le montant disponible couvre le coût.");
+        }
+      }else if(st.statut === "fp"){
+        if(restCpf > 0){
+          reasons.push("Le CPF fonction publique peut être complété par l'administration ou articulé avec un congé de transition / CFP selon le projet.");
+        }else if(Number(st.cpf_amount || 0) > 0){
+          reasons.push("Le CPF peut suffire si l'offre est éligible et si l'administration valide le montage.");
         }
       }else if(st.statut === "ind"){
         reasons.push("Le CPF peut se combiner avec un FAF selon l'activité et le fonds compétent.");
@@ -485,12 +537,18 @@ note = (status === "ineligible")
           cpfDispositifs.splice(i, 1);
         }
       }
-    }else if(st.statut === "sal" || st.statut === "fp"){
+    }else if(st.statut === "sal"){
       cpfWhy[0] = "Piste utile si la formation est éligible CPF et que le projet est porté par l'employeur ou en reconversion.";
       cpfWhy.push("En pratique, le CPF finance une première part ; l'employeur, l'OPCO ou un PTP peut compléter selon le projet.");
       cpfWhy.push("À vérifier : l'éligibilité Mon Compte Formation, l'abondement employeur / OPCO et l'articulation éventuelle avec un PTP.");
       cpfWhySources.push(["Compte personnel de formation"]);
       cpfWhySources.push(["Compte personnel de formation", "Projet de transition professionnelle"]);
+    }else if(st.statut === "fp"){
+      cpfWhy[0] = "Piste utile si la formation est éligible CPF et portée avec l'administration dans le cadre d'un projet d'évolution.";
+      cpfWhy.push("En pratique, le CPF finance une première part ; l'administration peut compléter ou articuler le projet avec un congé de transition / CFP.");
+      cpfWhy.push("À vérifier : l'éligibilité Mon Compte Formation, l'accord de l'administration et le dispositif public mobilisable.");
+      cpfWhySources.push(["Compte personnel de formation (fonction publique) – règles spécifiques"]);
+      cpfWhySources.push(["Compte personnel de formation (fonction publique) – règles spécifiques"]);
     }else if(st.statut === "ind"){
       cpfWhy[0] = "Piste utile si la formation est éligible CPF pour un travailleur indépendant.";
       cpfWhy.push("En pratique, le CPF finance une première part, puis le FAF compétent peut compléter selon l'activité et les barèmes annuels.");
@@ -505,9 +563,12 @@ note = (status === "ineligible")
       cpfWhySources.push(["Compte personnel de formation", "Chèque Pass Formation / Pass Formation (abondement CPF)"]);
       cpfDispositifs.push("Abondement France Travail sur un dossier CPF (financement complémentaire)", "Chèque Pass Formation / Pass Formation (abondement CPF)", "Chèque Pass Formation Sup (abondement CPF - formations ciblées)");
     }
+    const cpfTitle = st.statut === "fp"
+      ? "Fonction publique - CPF / congés de formation"
+      : "CPF + abondements (France Travail / Région HDF / employeur-OPCO)";
     packs.push({
       id: "cpf",
-      title: "CPF + abondements (France Travail / Région HDF / employeur-OPCO)",
+      title: cpfTitle,
       score: cpfScore,
       why: cpfWhy,
       whySources: cpfWhySources,
@@ -517,21 +578,41 @@ note = (status === "ineligible")
     let ptpScore = 0;
     if(st.statut === "sal" || st.statut === "fp") ptpScore += 55;
     if(st.cost_peda > 0) ptpScore += 5;
+    const ptpTitle = st.statut === "fp"
+      ? "Fonction publique - congé de transition / CFP"
+      : "Salariés - Projet de transition professionnelle (PTP)";
+    const ptpWhy = st.statut === "fp"
+      ? [
+          "Adapté aux agents publics qui portent un projet de transition ou de formation longue dans leur administration.",
+          "En pratique, la prise en charge et le maintien éventuel de rémunération passent par des règles propres à la fonction publique et par l'accord de l'administration.",
+          "À vérifier : le dispositif réellement mobilisable (congé de transition professionnelle ou congé de formation professionnelle), l'ancienneté et le calendrier interne."
+        ]
+      : [
+          "Adapté aux salariés qui changent de métier ou s'engagent dans une reconversion structurée.",
+          "En pratique, le PTP peut financer les frais pédagogiques et maintenir tout ou partie de la rémunération si le dossier est accepté.",
+          "À vérifier : l'ancienneté, le calendrier, le CEP et le dépôt du dossier chez Transitions Pro."
+        ];
+    const ptpWhySources = st.statut === "fp"
+      ? [
+          ["Compte personnel de formation (fonction publique) – règles spécifiques"],
+          ["Compte personnel de formation (fonction publique) – règles spécifiques"],
+          ["Compte personnel de formation (fonction publique) – règles spécifiques"]
+        ]
+      : [
+          ["Projet de transition professionnelle"],
+          ["Projet de transition professionnelle"],
+          ["Projet de transition professionnelle", "Conseil en évolution professionnelle"]
+        ];
+    const ptpDispositifs = st.statut === "fp"
+      ? ["Compte personnel de formation (fonction publique) – règles spécifiques"]
+      : ["Projet de transition professionnelle", "Conseil en évolution professionnelle"];
     packs.push({
       id: "ptp",
-      title: "Salariés - Projet de transition professionnelle (PTP)",
+      title: ptpTitle,
       score: ptpScore,
-      why: [
-        "Adapté aux salariés qui changent de métier ou s'engagent dans une reconversion structurée.",
-        "En pratique, le PTP peut financer les frais pédagogiques et maintenir tout ou partie de la rémunération si le dossier est accepté.",
-        "À vérifier : l'ancienneté, le calendrier, le CEP et le dépôt du dossier chez Transitions Pro."
-      ],
-      whySources: [
-        ["Projet de transition professionnelle"],
-        ["Projet de transition professionnelle"],
-        ["Projet de transition professionnelle", "Conseil en évolution professionnelle"]
-      ],
-      dispositifNames: ["Projet de transition professionnelle", "Conseil en évolution professionnelle"]
+      why: ptpWhy,
+      whySources: ptpWhySources,
+      dispositifNames: ptpDispositifs
     });
 
     let fafScore = 0;
@@ -777,13 +858,20 @@ note = (status === "ineligible")
       if(restCpf > 0){
         if(st.statut === "de" || st.statut === "jeune") missing.push("Demander un complément via France Travail (selon projet)");
         missing.push("Vérifier si un chèque/abondement Région HDF est mobilisable (selon critères)");
-        if(st.statut === "sal" || st.statut === "fp") missing.push("Vérifier un financement employeur/OPCO ou un PTP");
+        if(st.statut === "sal") missing.push("Vérifier un financement employeur/OPCO ou un PTP");
+        if(st.statut === "fp") missing.push("Vérifier le complément employeur public ou l'articulation avec un congé de transition / CFP");
       }
       missing.push("Vérifier l'éligibilité CPF de la formation (lien MCF / code RNCP/RS)");
     } else if(bestPackId === "ptp"){
-      missing.push("Prendre un rendez-vous CEP et vérifier l'éligibilité");
-      if(st.statut === "sal" && st.ptp_seniority !== "ok") missing.push("Confirmer l'ancienneté requise ou un cas d'accès dérogatoire au PTP");
-      missing.push("Préparer et déposer le dossier PTP dans les délais");
+      if(st.statut === "fp"){
+        missing.push("Prendre contact avec le service RH / formation pour cadrer le bon dispositif public");
+        missing.push("Vérifier l'ancienneté, le versant et l'accord de l'administration");
+        missing.push("Confirmer s'il faut mobiliser un congé de transition professionnelle ou un CFP");
+      }else{
+        missing.push("Prendre un rendez-vous CEP et vérifier l'éligibilité");
+        if(st.statut === "sal" && st.ptp_seniority !== "ok") missing.push("Confirmer l'ancienneté requise ou un cas d'accès dérogatoire au PTP");
+        missing.push("Préparer et déposer le dossier PTP dans les délais");
+      }
     } else if(bestPackId === "faf"){
       missing.push("Identifier le FAF compétent (selon activité) et déposer une demande");
     } else if((st.statut === "de" || st.statut === "jeune") && prf.status !== "confirmed"){
@@ -791,7 +879,7 @@ note = (status === "ineligible")
     }
 
     if(st.handicap === "oui") missing.push("Si pertinent : contacter Cap emploi / Agefiph/FIPHFP pour aides dédiées");
-    if(hasMobilityNeed && (st.statut === "de" || st.statut === "jeune")){
+    if(hasFranceTravailMobilityContext(st, prf)){
       if(st.allocation_ft === "none"){
         missing.push("Demander l'aide à la mobilité France Travail dans les 30 jours si la distance ou l'hébergement le justifie");
       }else{
@@ -800,8 +888,8 @@ note = (status === "ineligible")
     }
     if(st.needs.hebergement && (((bestPackId === "apprentissage" || bestPackId === "contratpro") && age !== "45+" && age !== "36-44" && age !== "36+") || st.statut === "alt")){
       const logementAlternanceLabel = (age === "<26" || age === "26-29" || age === "unknown")
-        ? "VÃ©rifier Mobili-Jeune et l'avance Loca-Pass si un logement est nÃ©cessaire pour l'alternance"
-        : "VÃ©rifier surtout l'avance Loca-Pass si un logement est nÃ©cessaire pour l'alternance";
+        ? "Vérifier Mobili-Jeune et l'avance Loca-Pass si un logement est nécessaire pour l'alternance"
+        : "Vérifier surtout l'avance Loca-Pass si un logement est nécessaire pour l'alternance";
       missing.push("Vérifier Mobili-Jeune et l'avance Loca-Pass si un logement est nécessaire pour l'alternance");
     }
     if(st.needs.hebergement && missing.length){
@@ -914,6 +1002,10 @@ note = (status === "ineligible")
         return false;
       }
 
+      if(isBranchSpecificOpcoDispositif(dispositif)){
+        return false;
+      }
+
       if(familyKey === "cpf-fp"){
         return st.statut === "fp";
       }
@@ -981,6 +1073,18 @@ note = (status === "ineligible")
         return st.statut === "de" || st.statut === "jeune";
       }
 
+      if(name.includes("bafa") && name.includes("caf")){
+        return st.formation === "bafa";
+      }
+
+      if(name.includes("agefiph")){
+        return st.handicap === "oui" && st.statut !== "fp";
+      }
+
+      if(name.includes("fiphfp")){
+        return st.handicap === "oui" && st.statut === "fp";
+      }
+
       if(name.includes("fif pl") || name.includes("agefice") || name.includes("vivea") || name.includes("cpf des travailleurs independants")){
         return st.statut === "ind";
       }
@@ -990,7 +1094,7 @@ note = (status === "ineligible")
       }
 
       if(name.includes("sesame") || name.includes("sésame")){
-        if(!(st.statut === "jeune" || st.statut === "de")) return false;
+        if(st.statut !== "jeune") return false;
         if(age === "unknown") return true;
         if(age === "<26") return true;
         if(age === "26-29") return st.handicap === "oui";
@@ -998,7 +1102,7 @@ note = (status === "ineligible")
       }
 
       if(name.includes("aide a la mobilite")){
-        return (st.statut === "de" || st.statut === "jeune") && hasMobilityNeed;
+        return hasFranceTravailMobilityContext(st, prf);
       }
 
       if(name.includes("mobili-jeune") || name.includes("mobili jeune")){
@@ -1115,7 +1219,7 @@ note = (status === "ineligible")
         if((looseName.includes("poei") || looseName.includes("pass emploi entreprise")) && st.employeur === "oui" && targetContractBand(st.target_contract) === "12plus") score += 2;
         if(looseName.includes("afpr") && st.employeur === "oui" && targetContractBand(st.target_contract) === "6to11") score += 2;
         if((looseName.includes("programme regional de formation") || looseName.includes("action de formation conventionnee") || looseName.includes("afc") || looseName.includes("sfer")) && (st.statut === "de" || st.statut === "jeune")) score += 2;
-        if(looseName.includes("aide a la mobilite") && (st.needs.transport || st.needs.hebergement)){
+        if(looseName.includes("aide a la mobilite") && hasFranceTravailMobilityContext(st, detectPRF(st))){
           score += (st.allocation_ft === "none") ? 4 : 2;
           if(st.needs.hebergement) score += 1;
         }

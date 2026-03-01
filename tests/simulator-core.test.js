@@ -180,7 +180,7 @@ test("PRF coverage stays conditional on RFFT without ARE", ()=>{
   assert.equal(coverage.remuneration, "◐ (RFFT selon cas)");
 });
 
-test("filterOtherDispositifs keeps relevant mobility and handicap aids", ()=>{
+test("filterOtherDispositifs keeps handicap aids when the profile justifies them", ()=>{
   const demandeur = {
     ...core.defaultState(),
     statut: "de",
@@ -188,8 +188,8 @@ test("filterOtherDispositifs keeps relevant mobility and handicap aids", ()=>{
     handicap: "oui",
     needs: {transport:true, hebergement:false, equipement:false}
   };
-  const filtered = core.filterOtherDispositifs(demandeur);
-  assert.equal(filtered.length, 2);
+  const filtered = core.filterOtherDispositifs(demandeur).map((item)=> String(item["Dispositif (Hauts-de-France)"] || item["Dispositif"] || ""));
+  assert.ok(filtered.some((name)=> /handicap/i.test(name)));
 });
 
 test("France Travail mobility aid stays hidden without a real annex need", ()=>{
@@ -221,6 +221,8 @@ test("France Travail mobility aid stays hidden without a real annex need", ()=>{
     ...mobilityCore.defaultState(),
     statut: "de",
     allocation_ft: "none",
+    cost_peda: 5000,
+    cpf_amount: 0,
     needs: {transport:true, hebergement:false, equipement:false}
   });
   assert.equal(withNeed.length, 1);
@@ -392,6 +394,207 @@ test("Mobili-Jeune is under 30 while Loca-Pass can still surface for older alter
     needs: {transport:false, hebergement:true, equipement:false}
   });
   assert.equal(eligible.length, 2);
+});
+
+test("Agefiph and FIPHFP stay aligned with handicap and public/private status", ()=>{
+  const handicapCore = createCore({
+    catalogue: [
+      {
+        "Dispositif": "Aides Agefiph (formation, compensation, parcours vers l'emploi, aides employeur…)",
+        "Sigle": "Agefiph",
+        "Domaine": "Handicap",
+        "Thématique": "Handicap",
+        "Ce qui est financé": "compensation et parcours de formation",
+        "Objectif / ce que ça permet": "sécuriser le parcours de formation et d'emploi",
+        "Publics éligibles": "personnes en situation de handicap",
+        "Spécificités sport/animation (exemples)": "bpjeps"
+      },
+      {
+        "Dispositif": "Aides FIPHFP (reconversion/formation, compensation handicap)",
+        "Sigle": "FIPHFP",
+        "Domaine": "Handicap – fonction publique",
+        "Thématique": "Handicap",
+        "Ce qui est financé": "formation et compensation",
+        "Objectif / ce que ça permet": "sécuriser le parcours d'un agent public en situation de handicap",
+        "Publics éligibles": "agents publics en situation de handicap",
+        "Spécificités sport/animation (exemples)": "bpjeps"
+      }
+    ],
+    region_hdf: []
+  });
+
+  const priveHandicap = handicapCore.filterOtherDispositifs({
+    ...handicapCore.defaultState(),
+    statut: "de",
+    age: "26-29",
+    formation: "bpjeps",
+    handicap: "oui"
+  }).map((item)=> String(item["Dispositif"] || ""));
+  assert.ok(priveHandicap.some((name)=> /Agefiph/i.test(name)));
+  assert.ok(!priveHandicap.some((name)=> /FIPHFP/i.test(name)));
+
+  const publicHandicap = handicapCore.filterOtherDispositifs({
+    ...handicapCore.defaultState(),
+    statut: "fp",
+    age: "30-35",
+    formation: "bpjeps",
+    handicap: "oui"
+  }).map((item)=> String(item["Dispositif"] || ""));
+  assert.ok(publicHandicap.some((name)=> /FIPHFP/i.test(name)));
+  assert.ok(!publicHandicap.some((name)=> /Agefiph/i.test(name)));
+});
+
+test("BAFA Caf only appears for BAFA projects", ()=>{
+  const bafaCore = createCore({
+    catalogue: [
+      {
+        "Dispositif": "Aide BAFA de la Caf (aide nationale) + compléments locaux",
+        "Sigle": "BAFA",
+        "Domaine": "Sport & animation (spécifique)",
+        "Thématique": "BAFA",
+        "Ce qui est financé": "part des frais BAFA",
+        "Objectif / ce que ça permet": "aider à financer le BAFA",
+        "Publics éligibles": "jeunes",
+        "Spécificités sport/animation (exemples)": "bafa bafd"
+      }
+    ],
+    region_hdf: []
+  });
+
+  const bafa = bafaCore.filterOtherDispositifs({
+    ...bafaCore.defaultState(),
+    statut: "jeune",
+    age: "<26",
+    formation: "bafa"
+  });
+  assert.equal(bafa.length, 1);
+
+  const notBafa = bafaCore.filterOtherDispositifs({
+    ...bafaCore.defaultState(),
+    statut: "jeune",
+    age: "<26",
+    formation: "bpjeps"
+  });
+  assert.equal(notBafa.length, 0);
+});
+
+test("SESAME stays on the jeune insertion path and not generic demandeur d'emploi", ()=>{
+  const sesameCore = createCore({
+    catalogue: [
+      {
+        "Dispositif": "SESAME",
+        "Sigle": "SESAME",
+        "Domaine": "Jeunes",
+        "Thématique": "Sport & animation",
+        "Ce qui est financé": "parcours, formation, accompagnement",
+        "Objectif / ce que ça permet": "accéder aux formations et métiers du sport et de l'animation",
+        "Publics éligibles": "jeunes",
+        "Spécificités sport/animation (exemples)": "cpjeps bpjeps"
+      }
+    ],
+    region_hdf: []
+  });
+
+  const jeune = sesameCore.filterOtherDispositifs({
+    ...sesameCore.defaultState(),
+    statut: "jeune",
+    age: "<26",
+    formation: "bpjeps"
+  });
+  assert.equal(jeune.length, 1);
+
+  const de = sesameCore.filterOtherDispositifs({
+    ...sesameCore.defaultState(),
+    statut: "de",
+    age: "<26",
+    formation: "bpjeps"
+  });
+  assert.equal(de.length, 0);
+});
+
+test("France Travail mobility aid stays tied to a plausible FT-funded path", ()=>{
+  const mobilityCore = createCore({
+    catalogue: [
+      {
+        "Dispositif": "Aide à la mobilité (France Travail)",
+        "Sigle": "Mobilité FT",
+        "Domaine": "France Travail",
+        "Thématique": "Mobilité",
+        "Ce qui est financé": "transport et hébergement",
+        "Objectif / ce que ça permet": "sécuriser l'entrée en formation",
+        "Publics éligibles": "demandeur d'emploi",
+        "Spécificités sport/animation (exemples)": "bpjeps"
+      }
+    ],
+    region_hdf: []
+  });
+
+  const noFranceTravailSignal = mobilityCore.filterOtherDispositifs({
+    ...mobilityCore.defaultState(),
+    statut: "de",
+    age: "30-35",
+    formation: "bpjeps",
+    prf_simple: "oui",
+    cost_peda: 0,
+    cpf_amount: 0,
+    needs: {transport: true, hebergement: false, equipement: false}
+  });
+  assert.equal(noFranceTravailSignal.length, 0);
+
+  const aifLikePath = mobilityCore.filterOtherDispositifs({
+    ...mobilityCore.defaultState(),
+    statut: "de",
+    age: "30-35",
+    formation: "bpjeps",
+    prf_simple: "nspp",
+    cost_peda: 5000,
+    cpf_amount: 0,
+    needs: {transport: true, hebergement: false, equipement: false}
+  });
+  assert.equal(aifLikePath.length, 1);
+
+  const preHirePath = mobilityCore.filterOtherDispositifs({
+    ...mobilityCore.defaultState(),
+    statut: "de",
+    age: "30-35",
+    formation: "bpjeps",
+    employeur: "oui",
+    target_contract: "12plus",
+    needs: {transport: false, hebergement: true, equipement: false}
+  });
+  assert.equal(preHirePath.length, 1);
+});
+
+test("Branch-specific OPCO entries stay in cartography but not in simulateur complements", ()=>{
+  const opcoCore = createCore({
+    catalogue: [
+      {
+        "Dispositif": "OPCO – branche du sport (CCN Sport IDCC 2511)",
+        "Sigle": "AFDAS",
+        "Domaine": "Gouvernance/acteurs",
+        "Thématique": "Branche sport",
+        "Ce qui est financé": "formation des salariés",
+        "Publics éligibles": "Employeurs/salariés relevant de la CCN Sport."
+      },
+      {
+        "Dispositif": "OPCO – branche Éclat (IDCC 1518)",
+        "Sigle": "Uniformation",
+        "Domaine": "Gouvernance/acteurs",
+        "Thématique": "Branche Éclat",
+        "Ce qui est financé": "formation des salariés",
+        "Publics éligibles": "Employeurs/salariés relevant de la branche Éclat."
+      }
+    ],
+    region_hdf: []
+  });
+
+  const filtered = opcoCore.filterOtherDispositifs({
+    ...opcoCore.defaultState(),
+    statut: "sal",
+    formation: "bpjeps"
+  });
+
+  assert.equal(filtered.length, 0);
 });
 
 test("FT and Region complements are surfaced only when CPF is insufficient", ()=>{

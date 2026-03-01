@@ -80,6 +80,10 @@ Cas particulier :
   Motif : aide nationale reelle avec complements locaux variables.
 - `OPCO - branche du sport (AFDAS)` / `OPCO - branche Eclat (Uniformation)`
   Motif : pas des aides directes mais des acteurs utiles pour comprendre qui finance ou instruit selon la branche.
+  Regle RELAIS : gardes en cartographie, mais retires du simulateur tant que la branche / convention collective n'est pas connue.
+- `Aide a la mobilite (France Travail)`
+  Motif : levier national reel, mais uniquement quand un parcours France Travail plausible existe.
+  Regle RELAIS : ne pas la faire remonter par simple besoin de transport/hebergement ; garder un signal plus strict (AIF/abondement FT/pre-embauche).
 
 ### Regle de lecture retenue
 

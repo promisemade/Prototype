@@ -52,6 +52,15 @@ test("representative profiles keep a coherent top scenario ordering", ()=>{
   }
 });
 
+test("agent public transition scenario no longer uses the private PTP wording", ()=>{
+  const state = makeState({ statut:"fp", formation:"bpjeps", cost_peda:5000 });
+  const top = core.buildPacks(state).packs[0];
+  assert.equal(top.id, "ptp");
+  assert.match(top.title, /Fonction publique/i);
+  assert.ok(!/Projet de transition professionnelle \(PTP\)/i.test(top.title));
+  assert.ok(top.why.some((line)=> /cong\u00e9 de transition professionnelle|cong\u00e9 de formation professionnelle/i.test(line)));
+});
+
 test("terrain cases keep complementary aids aligned with the actual profile", ()=>{
   const salarie45 = makeState({
     statut: "sal",
@@ -64,7 +73,7 @@ test("terrain cases keep complementary aids aligned with the actual profile", ()
   const salarieTop = core.buildPacks(salarie45).packs[0].id;
   const salarieOthers = core.filterOtherDispositifs(salarie45).map(getTitle);
   assert.ok(["cpf", "ptp"].includes(salarieTop));
-  assert.ok(salarieOthers.some((name)=> /OPCO/.test(name)));
+  assert.ok(!salarieOthers.some((name)=> /AFDAS|Uniformation|OPCO\s+[–-]\s+branche/i.test(name)));
   assert.ok(!salarieOthers.some((name)=> /AGEFICE|FAFCEA|apprentissage/i.test(name)));
 
   const independant = makeState({

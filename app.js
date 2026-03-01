@@ -51,12 +51,21 @@ function whoReceivesHTML(bestId, st, prf){
       lines.push("<li><strong>Indemnisation</strong> : selon la situation &rarr; g&eacute;n&eacute;ralement <strong>vers&eacute;e &agrave; la personne</strong> si applicable.</li>");
     }
   } else if(bestId === "ptp"){
-    lines.push("<li><strong>Frais p&eacute;dagogiques</strong> : si le PTP est accept&eacute;, prise en charge &rarr; paiement au <strong>prestataire (organisme)</strong>.</li>");
-    lines.push("<li><strong>R&eacute;mun&eacute;ration</strong> : maintien partiel/total possible &rarr; <strong>vers&eacute;e &agrave; la personne</strong> (selon les r&egrave;gles applicables).</li>");
+    if(st.statut === "fp"){
+      lines.push("<li><strong>Frais p&eacute;dagogiques</strong> : selon le dispositif public retenu, prise en charge possible par l'<strong>administration employeur</strong> &rarr; paiement au <strong>prestataire (organisme)</strong> si le dossier est valid&eacute;.</li>");
+      lines.push("<li><strong>R&eacute;mun&eacute;ration</strong> : maintien possible selon les r&egrave;gles de la fonction publique &rarr; <strong>vers&eacute;e &agrave; la personne</strong> par l'administration si le cong&eacute; est accord&eacute;.</li>");
+    }else{
+      lines.push("<li><strong>Frais p&eacute;dagogiques</strong> : si le PTP est accept&eacute;, prise en charge &rarr; paiement au <strong>prestataire (organisme)</strong>.</li>");
+      lines.push("<li><strong>R&eacute;mun&eacute;ration</strong> : maintien partiel/total possible &rarr; <strong>vers&eacute;e &agrave; la personne</strong> (selon les r&egrave;gles applicables).</li>");
+    }
   } else if(bestId === "faf"){
     lines.push("<li><strong>Frais p&eacute;dagogiques</strong> : selon le FAF, paiement possible au prestataire ou remboursement &rarr; souvent <strong>&agrave; la personne</strong> sur justificatifs.</li>");
   } else {
-    lines.push("<li><strong>Frais p&eacute;dagogiques</strong> : CPF &rarr; paiement au <strong>prestataire (organisme)</strong>. Reste &agrave; charge &eacute;ventuel <strong>pay&eacute; par la personne</strong>.</li>");
+    if(st.statut === "fp"){
+      lines.push("<li><strong>Frais p&eacute;dagogiques</strong> : CPF fonction publique &rarr; paiement au <strong>prestataire (organisme)</strong>, avec compl&eacute;ment possible de l'<strong>administration employeur</strong> selon le montage retenu.</li>");
+    }else{
+      lines.push("<li><strong>Frais p&eacute;dagogiques</strong> : CPF &rarr; paiement au <strong>prestataire (organisme)</strong>. Reste &agrave; charge &eacute;ventuel <strong>pay&eacute; par la personne</strong>.</li>");
+    }
   }
 
   lines.push("<li><strong>Frais annexes (transport/h&eacute;bergement)</strong> : le plus souvent <strong>vers&eacute;s/rembours&eacute;s &agrave; la personne</strong> (sur justificatifs) si une aide existe.</li>");
@@ -715,15 +724,22 @@ function buildPlanSteps(st, topPacks, prf){
       steps.push({title:"CPF : vérifier l’éligibilité de l’offre", text:"Confirmez le code RNCP/RS et la présence de l’offre sur Mon Compte Formation avant tout dépôt."});
       const cpfPlanText = (st.statut==="de" || st.statut==="jeune")
         ? "Déposez d’abord le CPF, puis traitez le complément éventuel dans le bon ordre : abondement France Travail, AIF ou Région selon la session."
-        : (st.statut==="sal" || st.statut==="fp")
+        : (st.statut==="sal")
           ? "Déposez d’abord le CPF, puis voyez avec l’employeur, l’OPCO ou un PTP pour le complément éventuel."
+          : (st.statut==="fp")
+            ? "Déposez d’abord le CPF, puis voyez avec l’administration le complément éventuel ou l’articulation avec un congé de transition / CFP."
           : (st.statut==="ind")
             ? "Déposez d’abord le CPF, puis vérifiez le complément FAF selon votre activité et les barèmes du fonds."
             : "Déposez d’abord le CPF, puis identifiez le bon financeur complémentaire selon votre situation.";
       steps.push({title:"CPF : traiter le complément si besoin", text: cpfPlanText});
     }else if(best.id==="ptp"){
-      steps.push({title:"PTP : démarrer par le CEP", text:"Prenez un rendez-vous CEP pour cadrer le projet, le calendrier et la stratégie de financement."});
-      steps.push({title:"PTP : déposer le dossier Transitions Pro", text:"Constituez un dossier complet dans les délais, avec devis, calendrier et pièces employeur si nécessaire."});
+      if(st.statut==="fp"){
+        steps.push({title:"Fonction publique : cadrer le projet", text:"Prenez contact avec le service RH / formation pour identifier le bon dispositif public et le calendrier."});
+        steps.push({title:"Fonction publique : confirmer le congé mobilisable", text:"Vérifiez s’il faut mobiliser un congé de transition professionnelle ou un congé de formation professionnelle selon votre situation."});
+      }else{
+        steps.push({title:"PTP : démarrer par le CEP", text:"Prenez un rendez-vous CEP pour cadrer le projet, le calendrier et la stratégie de financement."});
+        steps.push({title:"PTP : déposer le dossier Transitions Pro", text:"Constituez un dossier complet dans les délais, avec devis, calendrier et pièces employeur si nécessaire."});
+      }
     }else if(best.id==="faf"){
       steps.push({title:"FAF : identifier le fonds compétent", text:"Repérez le FAF compétent selon votre activité et vérifiez les règles de prise en charge de l’année."});
       steps.push({title:"FAF : déposer avant l’entrée en formation", text:"Déposez tôt avec les justificatifs demandés ; le financement FAF se joue souvent sur le calendrier et les pièces."});
@@ -1071,6 +1087,7 @@ function cartographyCanonicalKey(title, sigle=""){
   if(raw.includes("cheque pass formation sup") || raw.includes("chpf sup")) return "chpf-sup";
   if((raw.includes("cheque pass formation") || raw.includes("pass formation") || raw.includes("chpf")) && !raw.includes("sup")) return "chpf";
   if(raw.includes("carte generation hdf") || raw.includes("generation hdf")) return "generation-hdf";
+  if(raw.includes("compte personnel de formation") && raw.includes("fonction publique")) return "cpf-fp";
   if(raw.includes("mobili jeune")) return "mobili-jeune";
   if(raw.includes("loca pass")) return "loca-pass";
   if(raw.includes("pass vae") || raw.includes("cheque pass vae")) return "pass-vae-hdf";
@@ -1182,6 +1199,16 @@ function getCartographyFamilyOverrides(key){
       sigle: "PAEE",
       objective: "Formation sur mesure avant embauche, construite avec l'entreprise quand un recrutement est identifi\u00e9.",
       demarches: "Montage avec l'entreprise et les relais r\u00e9gionaux, souvent via Proch'Emploi ou les op\u00e9rateurs partenaires."
+    },
+    "cpf-fp": {
+      title: "Fonction publique - CPF / cong\u00e9s de formation",
+      sigle: "CPF FP",
+      domain: "Fonction publique (\u00e9volution professionnelle)",
+      publics: "Agents publics, avec r\u00e8gles sp\u00e9cifiques selon le versant, l'anciennet\u00e9, le projet et l'accord de l'administration.",
+      financeursText: "Administration employeur / service RH / formation",
+      objective: "Mobiliser le CPF dans la fonction publique, seul ou articul\u00e9 avec un cong\u00e9 de transition professionnelle ou un cong\u00e9 de formation professionnelle selon la situation.",
+      plafonds: "Bar\u00e8mes et droits variables selon les r\u00e8gles de la fonction publique et le montage retenu.",
+      demarches: "V\u00e9rifier l'\u00e9ligibilit\u00e9 de l'offre sur Mon Compte Formation puis confirmer avec l'administration le bon dispositif public mobilisable."
     },
     "mobili-jeune": {
       title: "Mobili-Jeune (aide au loyer en alternance)",
@@ -1524,7 +1551,25 @@ function missingDetails(text){
 
 function renderPacks(st){
   const {packs, prf} = buildPacks(st);
-  const top = packs.slice(0,3);
+  const top = (() => {
+    const visibleCandidates = packs.filter((pack)=> {
+      if(pack.eligibility && pack.eligibility.status === "ineligible") return false;
+      return pack.score > -200;
+    });
+    if(st.statut !== "fp") return visibleCandidates.slice(0,3);
+    const out = [];
+    let publicCpfCollapsed = false;
+    const hasPublicTransition = visibleCandidates.some((pack)=> pack.id === "ptp");
+    for(const pack of visibleCandidates){
+      if(hasPublicTransition && pack.id === "cpf" && !publicCpfCollapsed){
+        publicCpfCollapsed = true;
+        continue;
+      }
+      out.push(pack);
+      if(out.length >= 3) break;
+    }
+    return out;
+  })();
 
   $("planAction").innerHTML = renderPlanAction(st, top, prf);
 
