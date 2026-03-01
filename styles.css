@@ -6,6 +6,12 @@
 
 * { box-sizing: border-box; }
 
+html,
+body{
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 :root{
   /* Palette de marque (différente des couleurs d’État) */
   --brand-700: #0F766E; /* primaire (teal) */
@@ -1736,6 +1742,10 @@ body.expert .chips{ display:inline-flex; }
   .app-hero-metrics{
     grid-template-columns: 1fr;
   }
+  .app-header{
+    position: static;
+    top: auto;
+  }
   .app-header__row{
     flex-direction: column;
     align-items: stretch;
@@ -1776,12 +1786,13 @@ body.expert .chips{ display:inline-flex; }
   }
   .app-header__actions{
     width:100%;
-    flex-wrap:wrap;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
     white-space:normal;
     gap: .5rem;
   }
   .app-header__actions .fr-btn{
-    flex:1 1 calc(50% - .5rem);
+    width:100%;
     min-width: 0;
     justify-content:center;
   }
@@ -1836,6 +1847,31 @@ body.expert .chips{ display:inline-flex; }
   }
   .map-filters{
     grid-template-columns: 1fr;
+  }
+}
+
+@media(max-width: 32em){
+  .app-header__actions{
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print{
+  .app-header{
+    position: static !important;
+    top: auto !important;
+    box-shadow: none !important;
+  }
+  .app-header .fr-header__body{
+    background: #fff !important;
+    backdrop-filter: none !important;
+    border-bottom: 1px solid rgba(15,118,110,.18) !important;
+  }
+  .app-header__actions{
+    display: none !important;
+  }
+  .app-footer{
+    display: none !important;
   }
 }
 

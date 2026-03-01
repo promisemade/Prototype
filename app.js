@@ -1859,7 +1859,23 @@ function handleFooterPrint(){
     openPrintView();
     return;
   }
-  window.print();
+  const previousX = window.scrollX || 0;
+  const previousY = window.scrollY || 0;
+  const restore = ()=>{
+    setTimeout(()=>{
+      try{ window.scrollTo({ left: previousX, top: previousY, behavior: "auto" }); }catch(e){}
+    }, 120);
+  };
+  const afterPrint = ()=>{
+    window.removeEventListener("afterprint", afterPrint);
+    restore();
+  };
+  try{ window.addEventListener("afterprint", afterPrint, { once: true }); }catch(e){}
+  try{ window.scrollTo({ left: 0, top: 0, behavior: "auto" }); }catch(e){}
+  setTimeout(()=>{
+    try{ window.print(); }catch(e){}
+    setTimeout(restore, 500);
+  }, 80);
 }
 
 window.openPrintView = openPrintView;
