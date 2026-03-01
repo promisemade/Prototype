@@ -1,0 +1,10 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Logo Outil regional d'orientation des financements de formation</title>
+  <desc id="desc">Repere simple d'orientation et de parcours.</desc>
+  <rect x="18" y="18" width="60" height="60" rx="18" stroke="#0F766E" stroke-width="4.5"/>
+  <path d="M30 60H46C57.046 60 66 51.046 66 40V34" stroke="#0F766E" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M46 60V44" stroke="#0F766E" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="30" cy="60" r="5.5" fill="#0F766E"/>
+  <circle cx="46" cy="44" r="5.5" fill="#0F766E"/>
+  <circle cx="66" cy="34" r="5.5" fill="#0F766E"/>
+</svg>
